@@ -26,6 +26,11 @@ Additionally it caches the results for a configurable time in an Elasticsearch i
 }
 ```
 
+## Elasticsearch
+
+The service will automatically create an index the first time save is performed.
+There are no special mappings required for the service.
+
 ## Docker
 
 A Docker container is available.
