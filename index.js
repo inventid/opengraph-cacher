@@ -16,7 +16,7 @@ var info = "INFO";
 var warn = "WARN";
 var err = "ERROR";
 
-var cacheInDays = parseInt(process.env.CACHE_IN_DAYS) || 28;
+var cacheInDays = parseInt(process.env.CACHE_IN_DAYS, 10) || 28;
 
 function log(level, message) {
 	console.log(JSON.stringify({time: moment(new Date()).format(), severity: level, message: message}));
@@ -27,7 +27,8 @@ function cacheExpired(date) {
 }
 
 log(info, "Connected to Elasticsearch " + process.env.ES_VERSION + " on " + process.env.ES_URL + " using index '" + esIndex + "' with type '" + esType + "'. Using a cache of " + cacheInDays + " days.");
-app.get('/opengraph', function(req, res) {
+
+function workWorkWork(req, res) {
 	var urlToFetch = req.query.url;
 	var encodedUrl = encodeURI(urlToFetch);
 	es.get({index: esIndex, type: esType, id: encodedUrl}, function(err, response) {
@@ -64,8 +65,9 @@ app.get('/opengraph', function(req, res) {
 			res.json(response._source.data);
 		}
 	});
-});
+}
 
+app.get('/opengraph', workWorkWork);
 app.listen(7070, function() {
 	log(info, 'Server is listening');
 });
