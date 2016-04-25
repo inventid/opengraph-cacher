@@ -1,7 +1,7 @@
 [![inventid logo](https://cdn.inventid.nl/assets/logo-horizontally-ba8ae38ab1f53863fa4e99b977eaa1c7.png)](http://opensource.inventid.nl)
 
 [![Code Climate](https://codeclimate.com/github/inventid/opengraph-cacher/badges/gpa.svg)](https://codeclimate.com/github/inventid/opengraph-cacher)
-
+[![Dependency Status](https://gemnasium.com/badges/github.com/inventid/opengraph-cacher.svg)](https://gemnasium.com/github.com/inventid/opengraph-cacher)
 
 # Opengraph Cacher
 
