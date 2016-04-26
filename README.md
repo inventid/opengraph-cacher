@@ -39,13 +39,13 @@ Configuration is done using some command line variables.
 An example is:
 
 ```bash
-docker run
-    -e ES_URL=es.inventid.net:9200
-    -e ES_INDEX=opengraph
-    -e ES_TYPE=cache 
-    -e ES_VERSION=1.7
-    -e CACHE_IN_DAYS=4 
-    -p 7070:7070
+docker run \
+    -e ES_URL=es.inventid.net:9200 \
+    -e ES_INDEX=opengraph \
+    -e ES_TYPE=cache \
+    -e ES_VERSION=1.7 \
+    -e CACHE_IN_DAYS=4 \
+    -p 7070:7070 \
     inventid/opengraph-cacher
 ```
 
