@@ -10,18 +10,76 @@ Serving Opengraph data as a service
 ## What
 
 This project aims to be a simple service for internal use to fetch opengraph data in a structured fashion.
-It will return the data similar to the [open-graph-scraper](https://github.com/jshemas/openGraphScraper) project.
 
 Additionally it caches the results for a configurable time in an Elasticsearch instance.
 
 ```json
 {
-	"ogTitle": "Buy your tickets too!",
-	"ogDescription": "Fancy going as well? Buy your tickets now!",
-	"ogImage": {
-		"url": "https://ndchannel.files.wordpress.com/2011/09/h-artistry2bat2bmiecc2bin2boctober2blast2byear.jpg?size=huge",
-		"width": "1800",
-		"height": "1800"
+	"_url": "https://www.werkenbijderechtspraak.nl/",
+	"_scrapedAt": 1487334683528,
+	"_cacheResponse": false,
+	"data": {
+		"locale": [{
+			"value": "nl_NL"
+		}],
+		"type": [{
+			"value": "website"
+		}],
+		"title": [{
+			"value": "Werken bij de Rechtspraak"
+		}],
+		"description": [{
+			"value": "Op zoek naar een baan die er toe doet? De Rechtspraak heeft geregeld vacatures voor nieuwe collega's in juridische, staf of ICT functies"
+		}],
+		"url": [{
+			"value": "https://www.werkenbijderechtspraak.nl/"
+		}],
+		"site_name": [{
+			"value": "Werken bij de Rechtspraak"
+		}],
+		"twitter_card": [{
+			"value": "summary"
+		}],
+		"twitter_description": [{
+			"value": "Op zoek naar een baan die er toe doet? De Rechtspraak heeft geregeld vacatures voor nieuwe collega's in juridische, staf of ICT functies"
+		}],
+		"twitter_title": [{
+			"value": "Werken bij de Rechtspraak"
+		}],
+		"twitter_site": [{
+			"value": "@rechtspraakbaan"
+		}],
+		"twitter_creator": [{
+			"value": "@rechtspraakbaan"
+		}],
+		"image": [{
+			"value": {
+				"value": "https://d3pxfuwnql1xse.cloudfront.net/30b9376b5b94713347a6c5c37faf2d1deef6cf59?url=https%3A%2F%2Fwww.werkenbijderechtspraak.nl%2Fwp-content%2Fuploads%2F2016%2F08%2Fheader-3.jpg",
+				"width": [{
+					"value": "1600"
+				}],
+				"height": [{
+					"value": "220"
+				}],
+				"type": [{
+					"value": null
+				}]
+			}
+		}],
+		"twitter_image": [{
+			"value": {
+				"value": "https://d3pxfuwnql1xse.cloudfront.net/30b9376b5b94713347a6c5c37faf2d1deef6cf59?url=https%3A%2F%2Fwww.werkenbijderechtspraak.nl%2Fwp-content%2Fuploads%2F2016%2F08%2Fheader-3.jpg",
+				"width": [{
+					"value": null
+				}],
+				"height": [{
+					"value": null
+				}],
+				"alt": [{
+					"value": null
+				}]
+			}
+		}]
 	}
 }
 ```
@@ -30,6 +88,10 @@ Additionally it caches the results for a configurable time in an Elasticsearch i
 
 The service will automatically create an index the first time save is performed.
 There are no special mappings required for the service.
+
+# Camo images
+
+In order to ensure clients can requests clients from http over https the [camo](https://github.com/atmos/camo) service can be used. If the environment variables `CAMO_HOST` and `CAMO_KEY` are set, images are automatically rewritten to use the defined camo instance.
 
 ## Docker
 
