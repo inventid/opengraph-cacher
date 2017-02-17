@@ -3,8 +3,8 @@ var express = require('express');
 var ElasticSearch = require('elasticsearch');
 var moment = require("moment-timezone");
 var camoUrl = require('camo-url')({
-	host: process.env.CAMO_HOST,
-	key: process.env.CAMO_KEY
+	host : process.env.CAMO_HOST,
+	key : process.env.CAMO_KEY
 });
 
 var app = express();
@@ -46,18 +46,22 @@ function postProcess(url, data) {
 
 	// Format images for their special cases
 	['ogImage', 'twitterImage'].forEach(function (key) {
-		if (data[key] && data[key].url) {
-			var imageUrl = resolveRelative(data[key].url, url);
-			if (process.env.CAMO_KEY && process.env.CAMO_HOST) {
-				imageUrl = camoUrl(imageUrl);
+		if (data[key]) {
+			if (!data[key].url) {
+				delete data[key];
+			} else if(data[key].url) {
+				var imageUrl = resolveRelative(data[key].url, url);
+				if (process.env.CAMO_KEY && process.env.CAMO_HOST) {
+					imageUrl = camoUrl(imageUrl);
+				}
+				var image = Object.assign({}, {value : imageUrl});
+				Object.keys(data[key]).filter(function (e) {
+					return e !== 'url';
+				}).forEach(function (innerKey) {
+					image[innerKey] = [{value : data[key][innerKey]}];
+				});
+				data[key] = image;
 			}
-			var image = Object.assign({}, {value : imageUrl});
-			Object.keys(data[key]).filter(function (e) {
-				return e !== 'url';
-			}).forEach(function (innerKey) {
-				image[innerKey] = [{value : data[key][innerKey]}];
-			});
-			data[key] = image;
 		}
 	});
 
@@ -98,6 +102,9 @@ function resolveRelative(path, base) {
 	}
 	// Relative to the root
 	if (path.indexOf('/') === 0) {
+		if (!base.endsWith('/')) {
+			base += '/';
+		}
 		var match = base.match(/(\w*:\/\/)?[^\/]*\//) || [base];
 		return match[0] + path.slice(1);
 	}
@@ -120,6 +127,8 @@ function workWorkWork(req, res) {
 				log(WARN, "Got an error [" + err.status + "] while fetching URL '" + urlToFetch + "' from ES cache");
 			} else if (response._source && response._source._scrapedAt && cacheExpired(response._source._scrapedAt)) {
 				log(INFO, "Getting new value for '" + urlToFetch + "' since the cache expired");
+			} else if (!response) {
+				log(INFO, urlToFetch + " was not in the cache");
 			} else {
 				log(WARN, 'Formatting error in cache, refetching ' + urlToFetch);
 			}
