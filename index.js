@@ -77,7 +77,11 @@ function postProcess(url, data) {
 			return;
 		}
 
-		result.data[key] = [{value : data[originalKey]}]
+		if(data[originalKey].value) {
+			result.data[key] = [data[originalKey]]
+		} else {
+			result.data[key] = [{value : data[originalKey]}]
+		}
 	});
 
 	if (!result.data.url) {
