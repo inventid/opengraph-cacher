@@ -67,6 +67,10 @@ function postProcess(url, data) {
 
 	// Now map this to useful structures
 	Object.keys(data).forEach(function (originalKey) {
+		if (data[originalKey] === null || typeof data[originalKey] === 'undefined') {
+			return;
+		}
+
 		var key;
 		if (originalKey.startsWith('og')) {
 			key = stringToUnderscore(originalKey.substring(2)).substring(1);
