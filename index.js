@@ -167,6 +167,9 @@ function workWorkWork(req, res) {
 }
 
 app.get('/opengraph', workWorkWork);
+app.get('/_health', function (req, res) {
+	res.end('Jolly good here');
+});
 app.listen(7070, function () {
 	log(INFO, 'Server is listening');
 });
