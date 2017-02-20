@@ -85,7 +85,7 @@ function postProcess(url, data) {
 	});
 
 	if (!result.data.url) {
-		result.data.url = url;
+		result.data.url = [{value: url}];
 	}
 
 	return result;
