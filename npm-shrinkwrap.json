@@ -1,6 +1,6 @@
 {
   "name": "opengraph-cacher",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "dependencies": {
     "camo-url": {
       "version": "0.1.5",
