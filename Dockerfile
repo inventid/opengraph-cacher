@@ -6,7 +6,6 @@ EXPOSE 7070
 RUN groupadd -r luser && useradd -r -g luser luser
 
 RUN mkdir /service
-ADD npm-shrinkwrap.json /service/
 ADD package.json /service/
 RUN cd /service && npm install
 ADD index.js /service/
