@@ -128,7 +128,7 @@ function cacheEntryIsValid(error, response, url) {
 	}
 	if (error) {
 		if (error.status !== 404) {
-			log(WARN, "Got an error [" + err.status + "] while fetching URL '" + url + "' from ES cache");
+			log(WARN, "Got an error [" + error.status + "] while fetching URL '" + url + "' from ES cache");
 		}
 		return false;
 	}
