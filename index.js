@@ -49,7 +49,7 @@ function postProcess(url, data) {
 		if (data[key]) {
 			if (!data[key].url) {
 				delete data[key];
-			} else if(data[key].url) {
+			} else if (data[key].url) {
 				var imageUrl = resolveRelative(data[key].url, url);
 				if (process.env.CAMO_KEY && process.env.CAMO_HOST) {
 					imageUrl = camoUrl(imageUrl);
@@ -77,7 +77,7 @@ function postProcess(url, data) {
 			return;
 		}
 
-		if(data[originalKey].value) {
+		if (data[originalKey].value) {
 			result.data[key] = [data[originalKey]]
 		} else {
 			result.data[key] = [{value : data[originalKey]}]
@@ -120,32 +120,46 @@ if (process.env.ES_URL) {
 	log(INFO, "Connected to Elasticsearch " + process.env.ES_VERSION + " on " + process.env.ES_URL + " using index '" + esIndex + "' with type '" + esType + "'. Using a cache of " + cacheInDays + " days.");
 }
 
+function cacheEntryIsValid(error, response, url) {
+	if (!process.env.ES_URL) {
+		// No ES cache entry is set
+		log(WARN, "No ES cache specified, so skipping it");
+		return false;
+	}
+	if (error) {
+		if (error.status !== 404) {
+			log(WARN, "Got an error [" + err.status + "] while fetching URL '" + url + "' from ES cache");
+		}
+		return false;
+	}
+	if (!response._source || !response._source._scrapedAt || cacheExpired(response._source._scrapedAt)) {
+		log(WARN, 'Formatting error in cache, refetching ' + url);
+		return false;
+	}
+	if (cacheExpired(response._source._scrapedAt)) {
+		// cache is just expired
+		log(INFO, "Getting new value for '" + url + "' since the cache expired");
+		return false;
+	}
+	return true;
+}
+
 function workWorkWork(req, res) {
 	var urlToFetch = req.query.url;
 	var encodedUrl = encodeURI(urlToFetch);
 	es.get({index : esIndex, type : esType, id : encodedUrl}, function (err, response) {
-		if (!process.env.ES_URL || err || !response._source || !response._source._scrapedAt || cacheExpired(response._source._scrapedAt)) {
-			if (!process.env.ES_URL) {
-				log(WARN, "No ES cache specified, so skipping it");
-			} else if (err && err.status !== 404) {
-				log(WARN, "Got an error [" + err.status + "] while fetching URL '" + urlToFetch + "' from ES cache");
-			} else if (response._source && response._source._scrapedAt && cacheExpired(response._source._scrapedAt)) {
-				log(INFO, "Getting new value for '" + urlToFetch + "' since the cache expired");
-			} else if (!response) {
-				log(INFO, urlToFetch + " was not in the cache");
-			} else {
-				log(WARN, 'Formatting error in cache, refetching ' + urlToFetch);
-			}
-
+		if (cacheEntryIsValid(err, response, urlToFetch)) {
+			res.json(response._source);
+		} else {
 			var options = {
 				url : urlToFetch,
 				timeout : 5000
 			};
 			ogs(options, function (err, ogData) {
 				if (err || !ogData.success) {
-					log(ERR, 'Error while fetching OG data: ' + err);
+					log(ERR, 'Error while fetching OG data: ' + err + JSON.stringify(ogData));
 					res.statusCode = 400;
-					res.end();
+					res.status(400).end('Could not fetch the related OG data');
 					return;
 				}
 				var resultData = postProcess(urlToFetch, ogData.data);
@@ -160,8 +174,6 @@ function workWorkWork(req, res) {
 					});
 				}
 			});
-		} else {
-			res.json(response._source);
 		}
 	});
 }
