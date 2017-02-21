@@ -6,7 +6,7 @@ var camoUrl = require('camo-url')({
 	host : process.env.CAMO_HOST,
 	key : process.env.CAMO_KEY
 });
-
+var URL = require('url');
 var app = express();
 var es = new ElasticSearch.Client({
 	host : process.env.ES_URL,
@@ -19,6 +19,10 @@ var esType = process.env.ES_TYPE;
 var INFO = "INFO";
 var WARN = "WARN";
 var ERR = "ERROR";
+
+var BLOCKED_EXTENSIONS = ['pdf', 'gif', 'jpg', 'jpeg', 'png', 'svg'];
+
+var CACHABLE_ERRORS = ['Page Not Found'];
 
 var cacheInDays = parseInt(process.env.CACHE_IN_DAYS, 10) || 28;
 
@@ -36,13 +40,17 @@ function cacheExpired(date) {
 	return moment(date).add(cacheInDays, 'days').isBefore(moment(new Date()));
 }
 
-function postProcess(url, data) {
-	var result = Object.assign({}, {
+function defaultOutput(url) {
+	return Object.assign({}, {
 		_url : url,
 		_scrapedAt : parseInt(moment(new Date()).format('x'), 10),
 		_cacheResponse : false,
 		data : {}
 	});
+}
+
+function postProcess(url, data) {
+	var result = defaultOutput(url);
 
 	// Format images for their special cases
 	['ogImage', 'twitterImage'].forEach(function (key) {
@@ -89,7 +97,7 @@ function postProcess(url, data) {
 	});
 
 	if (!result.data.url) {
-		result.data.url = [{value: url}];
+		result.data.url = [{value : url}];
 	}
 
 	return result;
@@ -150,24 +158,48 @@ function cacheEntryIsValid(error, response, url) {
 
 function workWorkWork(req, res) {
 	var urlToFetch = req.query.url;
+	var pathname = URL.parse(urlToFetch).pathname;
+	var blockedResource = BLOCKED_EXTENSIONS.filter(function (extension) {
+			return pathname.endsWith(extension);
+		}).length > 0;
+	if (blockedResource) {
+		// Return standard format for misbehaving clients
+		var blockedError = defaultOutput(urlToFetch);
+		blockedError.error = 'This resource is blocked from fetching opengraph data';
+		res.status(403).json(blockedError);
+		return;
+	}
+
 	var encodedUrl = encodeURI(urlToFetch);
 	es.get({index : esIndex, type : esType, id : encodedUrl}, function (err, response) {
 		if (cacheEntryIsValid(err, response, urlToFetch)) {
-			res.json(response._source);
+			// If there is an error, we do not have the opengraph data so we return a 404
+			var statusCode = !response._source.error ? 200 : 404;
+			res.status(statusCode).json(response._source);
 		} else {
 			var options = {
 				url : urlToFetch,
 				timeout : 5000
 			};
 			ogs(options, function (err, ogData) {
+				var resultData;
 				if (err || !ogData.success) {
-					log(ERR, 'Error while fetching OG data: ' + err + JSON.stringify(ogData));
-					res.statusCode = 400;
-					res.status(400).end('Could not fetch the related OG data');
-					return;
+					// Return the data to the client
+					resultData = defaultOutput(urlToFetch);
+					resultData.err = ogData.err;
+
+					res.status(404).json(resultData);
+
+					if (CACHABLE_ERRORS.indexOf(ogData.err) === -1) {
+						// If this is a more permanent failure, we cache it
+						log(ERR, 'Error while fetching OG data: ' + JSON.stringify(ogData));
+						return;
+					}
+				} else {
+					// All went well, postprocess and send to client
+					resultData = postProcess(urlToFetch, ogData.data);
+					res.json(resultData);
 				}
-				var resultData = postProcess(urlToFetch, ogData.data);
-				res.json(resultData);
 
 				if (process.env.ES_URL) {
 					resultData._cacheResponse = true;
