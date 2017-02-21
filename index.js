@@ -192,7 +192,7 @@ function workWorkWork(req, res) {
 
 					if (CACHABLE_ERRORS.indexOf(ogData.err) === -1) {
 						// If this is a more permanent failure, we cache it
-						log(ERR, 'Error while fetching OG data: ' + JSON.stringify(ogData));
+						log(ERR, 'Error while fetching OG data for ' + urlToFetch + ': ' + JSON.stringify(ogData));
 						return;
 					}
 				} else {
