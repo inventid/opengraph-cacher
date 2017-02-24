@@ -139,7 +139,9 @@ function cacheEntryIsValid(error, response, url) {
 		return false;
 	}
 	if (error) {
-		if (error.status !== 404) {
+		if (error.status === 404) {
+			log(INFO, "Getting new value for '" + url + "' since never seen that before");
+		} else {
 			log(WARN, "Got an error [" + error.status + "] while fetching URL '" + url + "' from ES cache");
 		}
 		return false;
