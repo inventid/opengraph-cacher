@@ -144,7 +144,7 @@ function cacheEntryIsValid(error, response, url) {
 		}
 		return false;
 	}
-	if (!response._source || !response._source._scrapedAt || cacheExpired(response._source._scrapedAt)) {
+	if (!response._source || !response._source._scrapedAt) {
 		log(WARN, 'Formatting error in cache, refetching ' + url);
 		return false;
 	}
