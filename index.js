@@ -104,6 +104,11 @@ function postProcess(url, data) {
 }
 
 function resolveRelative(path, base) {
+	// Somebody forgot to properly set a protocol on an otherwise absolute url
+	if (path.indexOf("www.") == 0) {
+		return 'http://' + path;
+	}
+
 	// Absolute URL
 	if (path.match(/^[a-z]*:\/\//)) {
 		return path;
