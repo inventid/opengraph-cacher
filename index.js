@@ -105,7 +105,7 @@ function postProcess(url, data) {
 
 function resolveRelative(path, base) {
 	// Somebody forgot to properly set a protocol on an otherwise absolute url
-	if (path.indexOf("www.") == 0) {
+	if (path.indexOf("www.") === 0) {
 		return 'http://' + path;
 	}
 
@@ -185,7 +185,7 @@ function workWorkWork(req, res) {
 			res.status(statusCode).json(response._source);
 		} else {
 			var options = {
-				url : urlToFetch,
+				url : encodeURI(urlToFetch),
 				timeout : 5000
 			};
 			ogs(options, function (err, ogData) {
@@ -221,7 +221,27 @@ function workWorkWork(req, res) {
 	});
 }
 
+function ditchDitchDitch(req, res) {
+	var urlToDelete = req.query.url;
+
+	var encodedUrl = encodeURI(urlToDelete);
+	if (!process.env.ES_URL) {
+		// Technically not, but the effect is the same for the caller
+		res.status(200).json({message: 'The url has been deleted from the cache', url: urlToDelete});
+	}
+	es.delete({index : esIndex, type : esType, id : encodedUrl}, function (err, response) {
+		if (err && err.statusCode !== 404) {
+			// If there is an error, we do not have the opengraph data so we return a 404
+			log(ERR, 'An error occured while deleting data from the cache: ' + err);
+			res.status(500).json({message: 'The url could not be deleted due to an internal error', url: urlToDelete});
+		} else {
+			res.status(200).json({message: 'The url has been deleted from the cache', url: urlToDelete});
+		}
+	});
+}
+
 app.get('/opengraph', workWorkWork);
+app.delete('/opengraph', ditchDitchDitch);
 app.get('/_health', function (req, res) {
 	res.end('Jolly good here');
 });
