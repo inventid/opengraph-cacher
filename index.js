@@ -228,6 +228,7 @@ function ditchDitchDitch(req, res) {
 	if (!process.env.ES_URL) {
 		// Technically not, but the effect is the same for the caller
 		res.status(200).json({message: 'The url has been deleted from the cache', url: urlToDelete});
+		return;
 	}
 	es.delete({index : esIndex, type : esType, id : encodedUrl}, function (err, response) {
 		if (err && err.statusCode !== 404) {
