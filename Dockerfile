@@ -4,6 +4,9 @@ MAINTAINER Rogier Slag
 EXPOSE 7070
 
 RUN groupadd -r luser && useradd -r -g luser luser
+RUN mkdir -p /home/luser/.pm2/
+RUN chown -R luser.luser /home/luser
+RUN npm install -g pm2
 
 RUN mkdir /service
 ADD package.json /service/
@@ -12,5 +15,5 @@ ADD index.js /service/
 
 USER luser
 WORKDIR /service
-CMD ["node", "index.js"]
+CMD ["/usr/local/bin/pm2", "start", "index.js",  "--no-daemon", "--instances=max"]
 
