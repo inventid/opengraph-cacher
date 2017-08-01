@@ -22,7 +22,12 @@ var ERR = "ERROR";
 
 var BLOCKED_EXTENSIONS = ['pdf', 'gif', 'jpg', 'jpeg', 'png', 'svg'];
 
-var CACHABLE_ERRORS = ['Page Not Found'];
+var CACHABLE_NETWORK_ERRORS = [
+	'HPE_INVALID_CONSTANT', // May trigger if eg chipsoft Sharepoint send a content-length of 0 but secretly appends data
+];
+var NETWORK_ERRORS = [].concat(CACHABLE_NETWORK_ERRORS);
+var CACHABLE_PAGE_ERRORS = ['Page Not Found'];
+var CACHABLE_ERRORS = CACHABLE_NETWORK_ERRORS.concat(CACHABLE_PAGE_ERRORS);
 
 var cacheInDays = parseInt(process.env.CACHE_IN_DAYS, 10) || 28;
 
@@ -195,7 +200,11 @@ function workWorkWork(req, res) {
 					resultData = defaultOutput(urlToFetch);
 					resultData.err = ogData.err;
 
-					res.status(404).json(resultData);
+					var status = ogData.errorDetails && NETWORK_ERRORS.indexOf(ogData.errorDetails.code) !== -1 ?
+						406 : // If the network request is borked
+						404; // If the page was not found
+
+					res.status(status).json(resultData);
 
 					if (CACHABLE_ERRORS.indexOf(ogData.err) === -1) {
 						// If this is a more permanent failure, we cache it
