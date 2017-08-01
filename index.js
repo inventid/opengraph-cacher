@@ -177,7 +177,7 @@ function workWorkWork(req, res) {
 	if (blockedResource) {
 		// Return standard format for misbehaving clients
 		var blockedError = defaultOutput(urlToFetch);
-		blockedError.error = 'This resource is blocked from fetching opengraph data';
+		blockedError.err = 'This resource is blocked from fetching opengraph data';
 		res.status(403).json(blockedError);
 		return;
 	}
@@ -186,7 +186,7 @@ function workWorkWork(req, res) {
 	es.get({index : esIndex, type : esType, id : encodedUrl}, function (err, response) {
 		if (cacheEntryIsValid(err, response, urlToFetch)) {
 			// If there is an error, we do not have the opengraph data so we return a 404
-			var statusCode = !response._source.error ? 200 : 404;
+			var statusCode = !response._source.err ? 200 : 404;
 			res.status(statusCode).json(response._source);
 		} else {
 			var options = {
