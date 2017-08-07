@@ -191,7 +191,7 @@ function workWorkWork(req, res) {
 		} else {
 			var options = {
 				url : encodeURI(urlToFetch),
-				timeout : 5000
+				timeout : 10000
 			};
 			ogs(options, function (err, ogData) {
 				var resultData;
