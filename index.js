@@ -23,7 +23,7 @@ var ERR = "ERROR";
 var BLOCKED_EXTENSIONS = ['pdf', 'gif', 'jpg', 'jpeg', 'png', 'svg'];
 
 var CACHABLE_NETWORK_ERRORS = [
-	'HPE_INVALID_CONSTANT', // May trigger if eg chipsoft Sharepoint send a content-length of 0 but secretly appends data
+	'HPE_INVALID_CONSTANT' // May trigger if eg chipsoft Sharepoint send a content-length of 0 but secretly appends data
 ];
 var NETWORK_ERRORS = [].concat(CACHABLE_NETWORK_ERRORS);
 var CACHABLE_PAGE_ERRORS = ['Page Not Found'];
