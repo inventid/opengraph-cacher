@@ -1,4 +1,4 @@
-FROM node:4.2.6
+FROM node:6.2.2
 MAINTAINER Rogier Slag
 
 EXPOSE 7070
