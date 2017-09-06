@@ -16,8 +16,6 @@ var es = new ElasticSearch.Client({
 var esIndex = process.env.ES_INDEX;
 var esType = process.env.ES_TYPE;
 
-var timeout = process.env.HTTP_TIMEOUT || 10000;
-
 var INFO = "INFO";
 var WARN = "WARN";
 var ERR = "ERROR";
@@ -42,6 +40,9 @@ function stringToUnderscore(input) {
 function log(level, message) {
 	console.log(JSON.stringify({time : moment(new Date()).format(), severity : level, message : message}));
 }
+
+var timeout = Number(process.env.HTTP_TIMEOUT) || 10000;
+log(INFO, "Using a HTTP timeout of " + timeout + " milliseconds");
 
 function cacheExpired(date) {
 	return moment(date).add(cacheInDays, 'days').isBefore(moment(new Date()));
