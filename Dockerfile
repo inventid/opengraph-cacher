@@ -1,4 +1,4 @@
-FROM node:6.2.2
+FROM node:8.5
 MAINTAINER Rogier Slag
 
 EXPOSE 7070
@@ -9,8 +9,11 @@ RUN chown -R luser.luser /home/luser
 RUN npm install -g pm2
 
 RUN mkdir /service
+ADD package-lock.json /service/
 ADD package.json /service/
 RUN cd /service && npm install
+ADD defaultOutput.js /service/
+ADD mapper.js /service/
 ADD index.js /service/
 
 USER luser
