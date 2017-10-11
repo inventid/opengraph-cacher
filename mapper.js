@@ -65,6 +65,7 @@ function mapKeys(data, originalKey, result) {
 
 module.exports = function postProcess(url, data) {
 	const result = defaultOutput(url);
+	const canonicalUrl = data.ogUrl || url;
 
 	// Format images for their special cases
 	['ogImage', 'twitterImage'].forEach(function (key) {
@@ -72,7 +73,7 @@ module.exports = function postProcess(url, data) {
 			if (!data[key].url) {
 				delete data[key];
 			} else if (data[key].url) {
-				let imageUrl = resolveRelative(data[key].url, url);
+				let imageUrl = resolveRelative(data[key].url, canonicalUrl);
 				if (process.env.CAMO_KEY && process.env.CAMO_HOST) {
 					imageUrl = camoUrl(imageUrl);
 				}
