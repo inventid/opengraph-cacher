@@ -1,152 +1,52 @@
-var ogs = require('open-graph-scraper');
-var express = require('express');
-var ElasticSearch = require('elasticsearch');
-var moment = require("moment-timezone");
-var camoUrl = require('camo-url')({
-	host : process.env.CAMO_HOST,
-	key : process.env.CAMO_KEY
-});
-var URL = require('url');
-var app = express();
-var es = new ElasticSearch.Client({
+const ogs = require('open-graph-scraper');
+const express = require('express');
+const ElasticSearch = require('elasticsearch');
+const moment = require("moment-timezone");
+const URL = require('url');
+const app = express();
+const es = new ElasticSearch.Client({
 	host : process.env.ES_URL,
 	apiVersion : process.env.ES_VERSION
 });
+const defaultOutput = require('./defaultOutput');
+const postProcess = require('./mapper');
 
-var esIndex = process.env.ES_INDEX;
-var esType = process.env.ES_TYPE;
+const esIndex = process.env.ES_INDEX;
+const esType = process.env.ES_TYPE;
+const ES_URL = process.env.ES_URL;
 
-var INFO = "INFO";
-var WARN = "WARN";
-var ERR = "ERROR";
+const INFO = "INFO";
+const WARN = "WARN";
+const ERR = "ERROR";
 
-var BLOCKED_EXTENSIONS = ['pdf', 'gif', 'jpg', 'jpeg', 'png', 'svg'];
+const BLOCKED_EXTENSIONS = ['pdf', 'gif', 'jpg', 'jpeg', 'png', 'svg'];
 
-var CACHABLE_NETWORK_ERRORS = [
+const CACHABLE_NETWORK_ERRORS = [
 	'HPE_INVALID_CONSTANT' // May trigger if eg chipsoft Sharepoint send a content-length of 0 but secretly appends data
 ];
-var NETWORK_ERRORS = [].concat(CACHABLE_NETWORK_ERRORS);
-var CACHABLE_PAGE_ERRORS = ['Page Not Found'];
-var CACHABLE_ERRORS = CACHABLE_NETWORK_ERRORS.concat(CACHABLE_PAGE_ERRORS);
+const NETWORK_ERRORS = [].concat(CACHABLE_NETWORK_ERRORS);
+const CACHABLE_PAGE_ERRORS = ['Page Not Found'];
+const CACHABLE_ERRORS = CACHABLE_NETWORK_ERRORS.concat(CACHABLE_PAGE_ERRORS);
 
-var cacheInDays = parseInt(process.env.CACHE_IN_DAYS, 10) || 28;
-
-function stringToUnderscore(input) {
-	return input.replace(/([A-Z])/g, function ($1) {
-		return "_" + $1.toLowerCase();
-	});
-}
+const cacheInDays = parseInt(process.env.CACHE_IN_DAYS, 10) || 28;
 
 function log(level, message) {
 	console.log(JSON.stringify({time : moment(new Date()).format(), severity : level, message : message}));
 }
 
-var timeout = Number(process.env.HTTP_TIMEOUT) || 10000;
+const timeout = Number(process.env.HTTP_TIMEOUT) || 10000;
 log(INFO, "Using a HTTP timeout of " + timeout + " milliseconds");
 
 function cacheExpired(date) {
 	return moment(date).add(cacheInDays, 'days').isBefore(moment(new Date()));
 }
 
-function defaultOutput(url) {
-	return Object.assign({}, {
-		_url : url,
-		_scrapedAt : parseInt(moment(new Date()).format('x'), 10),
-		_cacheResponse : false,
-		data : {}
-	});
-}
-
-function postProcess(url, data) {
-	var result = defaultOutput(url);
-
-	// Format images for their special cases
-	['ogImage', 'twitterImage'].forEach(function (key) {
-		if (data[key]) {
-			if (!data[key].url) {
-				delete data[key];
-			} else if (data[key].url) {
-				var imageUrl = resolveRelative(data[key].url, url);
-				if (process.env.CAMO_KEY && process.env.CAMO_HOST) {
-					imageUrl = camoUrl(imageUrl);
-				}
-				var image = Object.assign({}, {value : imageUrl});
-				Object.keys(data[key]).filter(function (e) {
-					return e !== 'url';
-				}).forEach(function (innerKey) {
-					image[innerKey] = [{value : data[key][innerKey]}];
-				});
-				data[key] = image;
-			}
-		}
-	});
-
-	// Now map this to useful structures
-	Object.keys(data).forEach(function (originalKey) {
-		if (data[originalKey] === null || typeof data[originalKey] === 'undefined') {
-			return;
-		}
-
-		var key;
-		if (originalKey.startsWith('og')) {
-			key = stringToUnderscore(originalKey.substring(2)).substring(1);
-		}
-		else if (originalKey.startsWith('twitter')) {
-			key = stringToUnderscore(originalKey);
-		} else {
-			return;
-		}
-
-		if (data[originalKey].value) {
-			result.data[key] = [data[originalKey]]
-		} else {
-			result.data[key] = [{value : data[originalKey]}]
-		}
-	});
-
-	if (!result.data.url) {
-		result.data.url = [{value : url}];
-	}
-
-	return result;
-}
-
-function resolveRelative(path, base) {
-	// Somebody forgot to properly set a protocol on an otherwise absolute url
-	if (path.indexOf("www.") === 0) {
-		return 'http://' + path;
-	}
-
-	// Absolute URL
-	if (path.match(/^[a-z]*:\/\//)) {
-		return path;
-	}
-	// Protocol relative URL
-	if (path.indexOf("//") === 0) {
-		return base.replace(/\/\/.*/, path)
-	}
-	// Upper directory
-	if (path.indexOf("../") === 0) {
-		return resolveRelative(path.slice(3), base.replace(/\/[^\/]*$/, ''));
-	}
-	// Relative to the root
-	if (path.indexOf('/') === 0) {
-		if (!base.endsWith('/')) {
-			base += '/';
-		}
-		var match = base.match(/(\w*:\/\/)?[^\/]*\//) || [base];
-		return match[0] + path.slice(1);
-	}
-	//relative to the current directory
-	return base.replace(/\/[^\/]*$/, "") + '/' + path.replace(/^\.\//, '');
-}
-
 if (process.env.ES_URL) {
-	log(INFO, "Connected to Elasticsearch " + process.env.ES_VERSION + " on " + process.env.ES_URL + " using index '" + esIndex + "' with type '" + esType + "'. Using a cache of " + cacheInDays + " days.");
+	log(INFO, "Connected to Elasticsearch " + process.env.ES_VERSION + " on " + ES_URL + " using index '" + esIndex + "' with type '" + esType + "'. Using a cache of " + cacheInDays + " days.");
 }
 
 function cacheEntryIsValid(error, response, url) {
-	if (!process.env.ES_URL) {
+	if (!ES_URL) {
 		// No ES cache entry is set
 		log(WARN, "No ES cache specified, so skipping it");
 		return false;
@@ -171,78 +71,82 @@ function cacheEntryIsValid(error, response, url) {
 	return true;
 }
 
-function workWorkWork(req, res) {
-	var urlToFetch = req.query.url;
-	var pathname = URL.parse(urlToFetch).pathname;
-	var blockedResource = BLOCKED_EXTENSIONS.filter(function (extension) {
-			return pathname.endsWith(extension);
-		}).length > 0;
-	if (blockedResource) {
-		// Return standard format for misbehaving clients
-		var blockedError = defaultOutput(urlToFetch);
-		blockedError.err = 'This resource is blocked from fetching opengraph data';
-		res.status(403).json(blockedError);
-		return;
-	}
+function fetchFromRemoteAndSaveToCache(urlToFetch, res, encodedUrl) {
+	const options = {
+		url : encodeURI(urlToFetch),
+		timeout : timeout
+	};
+	ogs(options, function (err, ogData) {
+		let resultData;
+		if (err || !ogData.success) {
+			// Return the data to the client
+			resultData = defaultOutput(urlToFetch);
+			resultData.err = ogData.err;
 
-	var encodedUrl = encodeURI(urlToFetch);
-	es.get({index : esIndex, type : esType, id : encodedUrl}, function (err, response) {
-		if (cacheEntryIsValid(err, response, urlToFetch)) {
-			// If there is an error, we do not have the opengraph data so we return a 404
-			var statusCode = !response._source.err ? 200 : 404;
-			res.status(statusCode).json(response._source);
+			const status = ogData.errorDetails && NETWORK_ERRORS.indexOf(ogData.errorDetails.code) !== -1 ?
+				406 : // If the network request is borked
+				404; // If the page was not found
+
+			res.status(status).json(resultData);
+
+			if (CACHABLE_ERRORS.indexOf(ogData.err) === -1) {
+				// If this is a more permanent failure, we cache it
+				log(ERR, 'Error while fetching OG data for ' + urlToFetch + ': ' + JSON.stringify(ogData));
+				return;
+			}
 		} else {
-			var options = {
-				url : encodeURI(urlToFetch),
-				timeout : timeout
-			};
-			ogs(options, function (err, ogData) {
-				var resultData;
-				if (err || !ogData.success) {
-					// Return the data to the client
-					resultData = defaultOutput(urlToFetch);
-					resultData.err = ogData.err;
+			// All went well, postprocess and send to client
+			resultData = postProcess(urlToFetch, ogData.data);
+			res.json(resultData);
+		}
 
-					var status = ogData.errorDetails && NETWORK_ERRORS.indexOf(ogData.errorDetails.code) !== -1 ?
-						406 : // If the network request is borked
-						404; // If the page was not found
-
-					res.status(status).json(resultData);
-
-					if (CACHABLE_ERRORS.indexOf(ogData.err) === -1) {
-						// If this is a more permanent failure, we cache it
-						log(ERR, 'Error while fetching OG data for ' + urlToFetch + ': ' + JSON.stringify(ogData));
-						return;
-					}
-				} else {
-					// All went well, postprocess and send to client
-					resultData = postProcess(urlToFetch, ogData.data);
-					res.json(resultData);
-				}
-
-				if (process.env.ES_URL) {
-					resultData._cacheResponse = true;
-					es.index({index : esIndex, type : esType, id : encodedUrl, body : resultData}, function (err) {
-						if (err) {
-							log(WARN, 'Could not save value to cache due to error: ' + err);
-						}
-					});
+		if (ES_URL) {
+			resultData._cacheResponse = true;
+			es.index({index : esIndex, type : esType, id : encodedUrl, body : resultData}, function (err) {
+				if (err) {
+					log(WARN, 'Could not save value to cache due to error: ' + err);
 				}
 			});
 		}
 	});
 }
 
-function ditchDitchDitch(req, res) {
-	var urlToDelete = req.query.url;
+function workWorkWork(req, res) {
+	const urlToFetch = req.query.url;
+	const pathname = URL.parse(urlToFetch).pathname;
+	const blockedResource = BLOCKED_EXTENSIONS.filter(function (extension) {
+			return pathname.endsWith(extension);
+		}).length > 0;
+	if (blockedResource) {
+		// Return standard format for misbehaving clients
+		const blockedError = defaultOutput(urlToFetch);
+		blockedError.err = 'This resource is blocked from fetching opengraph data';
+		res.status(403).json(blockedError);
+		return;
+	}
 
-	var encodedUrl = encodeURI(urlToDelete);
-	if (!process.env.ES_URL) {
+	const encodedUrl = encodeURI(urlToFetch);
+	es.get({index : esIndex, type : esType, id : encodedUrl}, function (err, response) {
+		if (cacheEntryIsValid(err, response, urlToFetch)) {
+			// If there is an error, we do not have the opengraph data so we return a 404
+			const statusCode = !response._source.err ? 200 : 404;
+			res.status(statusCode).json(response._source);
+		} else {
+			fetchFromRemoteAndSaveToCache(urlToFetch, res, encodedUrl);
+		}
+	});
+}
+
+function ditchDitchDitch(req, res) {
+	const urlToDelete = req.query.url;
+
+	const encodedUrl = encodeURI(urlToDelete);
+	if (!ES_URL) {
 		// Technically not, but the effect is the same for the caller
 		res.status(200).json({message: 'The url has been deleted from the cache', url: urlToDelete});
 		return;
 	}
-	es.delete({index : esIndex, type : esType, id : encodedUrl}, function (err, response) {
+	es.delete({index : esIndex, type : esType, id : encodedUrl}, function (err) {
 		if (err && err.statusCode !== 404) {
 			// If there is an error, we do not have the opengraph data so we return a 404
 			log(ERR, 'An error occured while deleting data from the cache: ' + err);
