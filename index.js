@@ -74,6 +74,15 @@ function cacheEntryIsValid(error, response, url) {
 	return true;
 }
 
+function saveResultToEs(resultData, encodedUrl) {
+	resultData._cacheResponse = true;
+	es.index({index : esIndex, type : esType, id : encodedUrl, body : resultData}, function (err) {
+		if (err) {
+			log(WARN, 'Could not save value to cache due to error: ' + err);
+		}
+	});
+}
+
 function fetchFromRemoteAndSaveToCache(urlToFetch, res, encodedUrl) {
 	const options = {
 		url : encodeURI(urlToFetch),
@@ -104,12 +113,7 @@ function fetchFromRemoteAndSaveToCache(urlToFetch, res, encodedUrl) {
 		}
 
 		if (ES_URL) {
-			resultData._cacheResponse = true;
-			es.index({index : esIndex, type : esType, id : encodedUrl, body : resultData}, function (err) {
-				if (err) {
-					log(WARN, 'Could not save value to cache due to error: ' + err);
-				}
-			});
+			saveResultToEs(resultData, encodedUrl);
 		}
 	});
 }
@@ -125,27 +129,32 @@ async function isPubliclyAccessible(url) {
 	}
 }
 
-async function workWorkWork(req, res) {
-	const urlToFetch = req.query.url;
+async function isBlocked(urlToFetch) {
 	const url = URL.parse(urlToFetch);
 	const isPublicResource = await isPubliclyAccessible(url);
 	const pathname = url.pathname;
 	const blockedResource = BLOCKED_EXTENSIONS.filter(function (extension) {
 		return pathname.endsWith(extension);
 	}).length > 0;
+	const blockedError = defaultOutput(urlToFetch);
 	if (blockedResource) {
 		// Return standard format for misbehaving clients
-		const blockedError = defaultOutput(urlToFetch);
 		blockedError.err = 'This resource is blocked from fetching opengraph data';
-		res.status(403).json(blockedError);
-		return;
+		return blockedError;
 	}
 	else if (!isPublicResource) {
 		// Return standard format for internal requests clients
-		const blockedError = defaultOutput(urlToFetch);
 		blockedError.err = 'This resource is not publicly accessible';
-		res.status(403).json(blockedError);
-		return;
+		return blockedError;
+	}
+	return null;
+}
+
+async function workWorkWork(req, res) {
+	const urlToFetch = req.query.url;
+	const potentialBlockedError = isBlocked(urlToFetch);
+	if (potentialBlockedError) {
+		return res.status(403).json(potentialBlockedError);
 	}
 
 	const encodedUrl = encodeURI(urlToFetch);
