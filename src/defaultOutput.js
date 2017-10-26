@@ -1,11 +1,10 @@
 const moment = require("moment-timezone");
 
-module.exports = function defaultOutput(url) {
-	return Object.assign({}, {
+export default function defaultOutput(url) {
+	return {
 		_url : url,
 		_scrapedAt : parseInt(moment(new Date()).format('x'), 10),
 		_cacheResponse : false,
 		data : {}
-	});
-};
-
+	};
+}

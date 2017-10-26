@@ -1,8 +1,9 @@
+import defaultOutput from './defaultOutput';
+
 const camoUrl = require('camo-url')({
 	host : process.env.CAMO_HOST,
 	key : process.env.CAMO_KEY
 });
-const defaultOutput = require('./defaultOutput');
 
 function stringToUnderscore(input) {
 	return input.replace(/([A-Z])/g, function ($1) {
@@ -89,7 +90,9 @@ module.exports = function postProcess(url, data) {
 	});
 
 	// Now map this to useful structures
-	Object.keys(data).forEach(function(originalKey) { mapKeys(data, originalKey, result); });
+	Object.keys(data).forEach(function (originalKey) {
+		mapKeys(data, originalKey, result);
+	});
 
 	if (!result.data.url) {
 		result.data.url = [{value : url}];

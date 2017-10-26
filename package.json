@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "npm run lint",
+    "dist": "npm bin && babel src --out-dir dist",
+    "test": "npm run lint && npm run dist",
     "lint": "eslint ."
   },
   "author": "",
@@ -19,6 +20,10 @@
     "open-graph-scraper": "^2.5.4"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
     "eslint": "^4.8.0"
   }
 }

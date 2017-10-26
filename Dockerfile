@@ -9,14 +9,14 @@ RUN chown -R luser.luser /home/luser
 RUN npm install -g pm2
 
 RUN mkdir /service
+ADD .babelrc /service/
 ADD package-lock.json /service/
 ADD package.json /service/
 RUN cd /service && npm install
-ADD defaultOutput.js /service/
-ADD mapper.js /service/
-ADD index.js /service/
+ADD src /service/src/
+RUN cd /service && npm run dist
 
 USER luser
-WORKDIR /service
+WORKDIR /service/dist
 CMD ["/usr/local/bin/pm2", "start", "index.js",  "--no-daemon", "--instances=max"]
 
