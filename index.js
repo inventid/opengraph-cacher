@@ -4,6 +4,9 @@ const ElasticSearch = require('elasticsearch');
 const moment = require("moment-timezone");
 const URL = require('url');
 const app = express();
+const promisify = require('es6-promisify');
+const dns = require('dns');
+const ip = require('ip');
 const es = new ElasticSearch.Client({
 	host : process.env.ES_URL,
 	apiVersion : process.env.ES_VERSION
@@ -111,16 +114,36 @@ function fetchFromRemoteAndSaveToCache(urlToFetch, res, encodedUrl) {
 	});
 }
 
-function workWorkWork(req, res) {
+async function isPubliclyAccessible(url) {
+	const host = url.host;
+	try {
+		const result = await promisify(dns.lookup)(host, {all : true, verbatim : true});
+		return result.map(e => e.address).reduce((val, cur) => val && ip.isPublic(cur), true);
+	} catch (e) {
+		log(WARN, `url ${host} could not be resolved to an ip address`);
+		return false;
+	}
+}
+
+async function workWorkWork(req, res) {
 	const urlToFetch = req.query.url;
-	const pathname = URL.parse(urlToFetch).pathname;
+	const url = URL.parse(urlToFetch);
+	const isPublicResource = await isPubliclyAccessible(url);
+	const pathname = url.pathname;
 	const blockedResource = BLOCKED_EXTENSIONS.filter(function (extension) {
-			return pathname.endsWith(extension);
-		}).length > 0;
+		return pathname.endsWith(extension);
+	}).length > 0;
 	if (blockedResource) {
 		// Return standard format for misbehaving clients
 		const blockedError = defaultOutput(urlToFetch);
 		blockedError.err = 'This resource is blocked from fetching opengraph data';
+		res.status(403).json(blockedError);
+		return;
+	}
+	else if (!isPublicResource) {
+		// Return standard format for internal requests clients
+		const blockedError = defaultOutput(urlToFetch);
+		blockedError.err = 'This resource is not publicly accessible';
 		res.status(403).json(blockedError);
 		return;
 	}
@@ -143,16 +166,19 @@ function ditchDitchDitch(req, res) {
 	const encodedUrl = encodeURI(urlToDelete);
 	if (!ES_URL) {
 		// Technically not, but the effect is the same for the caller
-		res.status(200).json({message: 'The url has been deleted from the cache', url: urlToDelete});
+		res.status(200).json({message : 'The url has been deleted from the cache', url : urlToDelete});
 		return;
 	}
 	es.delete({index : esIndex, type : esType, id : encodedUrl}, function (err) {
 		if (err && err.statusCode !== 404) {
 			// If there is an error, we do not have the opengraph data so we return a 404
 			log(ERR, 'An error occured while deleting data from the cache: ' + err);
-			res.status(500).json({message: 'The url could not be deleted due to an internal error', url: urlToDelete});
+			res.status(500).json({
+				message : 'The url could not be deleted due to an internal error',
+				url : urlToDelete
+			});
 		} else {
-			res.status(200).json({message: 'The url has been deleted from the cache', url: urlToDelete});
+			res.status(200).json({message : 'The url has been deleted from the cache', url : urlToDelete});
 		}
 	});
 }
