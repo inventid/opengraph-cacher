@@ -6,7 +6,7 @@
   "scripts": {
     "dist": "npm bin && babel src --out-dir dist",
     "test": "npm run lint && npm run dist",
-    "lint": "eslint ."
+    "lint": "eslint src/"
   },
   "author": "",
   "license": "MIT",

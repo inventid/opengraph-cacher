@@ -12,6 +12,12 @@ const HTTP_TIMEOUT = Number(process.env.HTTP_TIMEOUT) || 10000;
 
 log(INFO, "Using a HTTP timeout of " + HTTP_TIMEOUT + " milliseconds");
 
+function response(statusCode, response) {
+	return {
+		statusCode,
+		response
+	}
+}
 async function fetchFromRemote(urlToFetch) {
 	const options = {
 		url : encodeURI(urlToFetch),
@@ -21,24 +27,17 @@ async function fetchFromRemote(urlToFetch) {
 		const ogData = await promisify(ogs)(options);
 		if (ogData && ogData.success) {
 			const resultData = postProcess(urlToFetch, ogData.data);
-			return {
-				statusCode : 200,
-				response : resultData
-			};
+			return response(200, resultData);
 		} else {
 			const resultData = defaultOutput(urlToFetch);
-			resultData.err = (ogData && ogData.err) || undefined;
+			if (ogData && ogData.err) {
+				resultData.err = ogData.err;
+			}
 			const statusCode = (ogData && ogData.err) ? determineErrorCode(ogData.errorDetails) : 404;
-			return {
-				statusCode,
-				response : resultData
-			};
+			return response(statusCode, resultData);
 		}
 	} catch (e) {
-		return {
-			statusCode : 500,
-			response : defaultOutput(urlToFetch)
-		};
+		return response(500, defaultOutput(urlToFetch));
 	}
 }
 
