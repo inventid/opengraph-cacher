@@ -4,6 +4,9 @@ const ElasticSearch = require('elasticsearch');
 const moment = require("moment-timezone");
 const URL = require('url');
 const app = express();
+const promisify = require('es6-promisify');
+const dns = require('dns');
+const ip = require('ip');
 const es = new ElasticSearch.Client({
 	host : process.env.ES_URL,
 	apiVersion : process.env.ES_VERSION
@@ -71,6 +74,15 @@ function cacheEntryIsValid(error, response, url) {
 	return true;
 }
 
+function saveResultToEs(resultData, encodedUrl) {
+	resultData._cacheResponse = true;
+	es.index({index : esIndex, type : esType, id : encodedUrl, body : resultData}, function (err) {
+		if (err) {
+			log(WARN, 'Could not save value to cache due to error: ' + err);
+		}
+	});
+}
+
 function fetchFromRemoteAndSaveToCache(urlToFetch, res, encodedUrl) {
 	const options = {
 		url : encodeURI(urlToFetch),
@@ -101,28 +113,48 @@ function fetchFromRemoteAndSaveToCache(urlToFetch, res, encodedUrl) {
 		}
 
 		if (ES_URL) {
-			resultData._cacheResponse = true;
-			es.index({index : esIndex, type : esType, id : encodedUrl, body : resultData}, function (err) {
-				if (err) {
-					log(WARN, 'Could not save value to cache due to error: ' + err);
-				}
-			});
+			saveResultToEs(resultData, encodedUrl);
 		}
 	});
 }
 
-function workWorkWork(req, res) {
-	const urlToFetch = req.query.url;
-	const pathname = URL.parse(urlToFetch).pathname;
+async function isPubliclyAccessible(url) {
+	const host = url.host;
+	try {
+		const result = await promisify(dns.lookup)(host, {all : true, verbatim : true});
+		return result.map(e => e.address).reduce((val, cur) => val && ip.isPublic(cur), true);
+	} catch (e) {
+		log(WARN, `url ${host} could not be resolved to an ip address`);
+		return false;
+	}
+}
+
+async function isBlocked(urlToFetch) {
+	const url = URL.parse(urlToFetch);
+	const isPublicResource = await isPubliclyAccessible(url);
+	const pathname = url.pathname;
 	const blockedResource = BLOCKED_EXTENSIONS.filter(function (extension) {
-			return pathname.endsWith(extension);
-		}).length > 0;
+		return pathname.endsWith(extension);
+	}).length > 0;
+	const blockedError = defaultOutput(urlToFetch);
 	if (blockedResource) {
 		// Return standard format for misbehaving clients
-		const blockedError = defaultOutput(urlToFetch);
 		blockedError.err = 'This resource is blocked from fetching opengraph data';
-		res.status(403).json(blockedError);
-		return;
+		return blockedError;
+	}
+	else if (!isPublicResource) {
+		// Return standard format for internal requests clients
+		blockedError.err = 'This resource is not publicly accessible';
+		return blockedError;
+	}
+	return null;
+}
+
+async function workWorkWork(req, res) {
+	const urlToFetch = req.query.url;
+	const potentialBlockedError = isBlocked(urlToFetch);
+	if (potentialBlockedError) {
+		return res.status(403).json(potentialBlockedError);
 	}
 
 	const encodedUrl = encodeURI(urlToFetch);
@@ -143,16 +175,19 @@ function ditchDitchDitch(req, res) {
 	const encodedUrl = encodeURI(urlToDelete);
 	if (!ES_URL) {
 		// Technically not, but the effect is the same for the caller
-		res.status(200).json({message: 'The url has been deleted from the cache', url: urlToDelete});
+		res.status(200).json({message : 'The url has been deleted from the cache', url : urlToDelete});
 		return;
 	}
 	es.delete({index : esIndex, type : esType, id : encodedUrl}, function (err) {
 		if (err && err.statusCode !== 404) {
 			// If there is an error, we do not have the opengraph data so we return a 404
 			log(ERR, 'An error occured while deleting data from the cache: ' + err);
-			res.status(500).json({message: 'The url could not be deleted due to an internal error', url: urlToDelete});
+			res.status(500).json({
+				message : 'The url could not be deleted due to an internal error',
+				url : urlToDelete
+			});
 		} else {
-			res.status(200).json({message: 'The url has been deleted from the cache', url: urlToDelete});
+			res.status(200).json({message : 'The url has been deleted from the cache', url : urlToDelete});
 		}
 	});
 }
