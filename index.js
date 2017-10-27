@@ -152,7 +152,7 @@ async function isBlocked(urlToFetch) {
 
 async function workWorkWork(req, res) {
 	const urlToFetch = req.query.url;
-	const potentialBlockedError = isBlocked(urlToFetch);
+	const potentialBlockedError = await isBlocked(urlToFetch);
 	if (potentialBlockedError) {
 		return res.status(403).json(potentialBlockedError);
 	}
