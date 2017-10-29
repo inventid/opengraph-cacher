@@ -9,17 +9,20 @@ const CACHABLE_NETWORK_ERRORS = [
 const NETWORK_ERRORS = [].concat(CACHABLE_NETWORK_ERRORS);
 const CACHABLE_PAGE_ERRORS = ['Page Not Found'];
 const CACHABLE_ERRORS = CACHABLE_NETWORK_ERRORS.concat(CACHABLE_PAGE_ERRORS);
-const BLOCKED_EXTENSIONS = ['pdf', 'gif', 'jpg', 'jpeg', 'png', 'svg'];
+const BLOCKED_EXTENSIONS = ['pdf', 'gif', 'jpg', 'jpeg', 'png', 'svg', 'mp4'];
 
-async function isPubliclyAccessible(url) {
-	const host = url.host;
+async function isHostnamePubliclyAccessible(hostname) {
 	try {
-		const result = await promisify(dns.lookup)(host, {all : true, verbatim : true});
+		const result = await promisify(dns.lookup)(hostname, {all : true, verbatim : true});
 		return result.map(e => e.address).reduce((val, cur) => val && ip.isPublic(cur), true);
 	} catch (e) {
-		log(WARN, `url ${host} could not be resolved to an ip address`);
+		log(WARN, `url ${hostname} could not be resolved to an ip address`);
 		return false;
 	}
+}
+
+function isAllowedExtension(url) {
+	return BLOCKED_EXTENSIONS.filter(extension => url.toLowerCase().endsWith(extension.toLowerCase())).length === 0;
 }
 
 function determineErrorCode(errorDetails) {
@@ -32,8 +35,4 @@ function isCachableError(error) {
 	return CACHABLE_ERRORS.includes(error);
 }
 
-function isBlockedExtension(path) {
-	return BLOCKED_EXTENSIONS.filter(extension => path.endsWith(extension)).length > 0;
-}
-
-export {isCachableError, determineErrorCode, isPubliclyAccessible, isBlockedExtension}
+export {isCachableError, determineErrorCode, isHostnamePubliclyAccessible, isAllowedExtension}

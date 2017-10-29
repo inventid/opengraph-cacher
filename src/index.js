@@ -6,7 +6,7 @@ import {get, remove, save} from "./cache";
 import defaultOutput from './defaultOutput';
 import postProcess from './mapper';
 import log, {ERR, INFO} from "./log";
-import {determineErrorCode, isBlockedExtension, isCachableError, isPubliclyAccessible} from "./network";
+import {determineErrorCode, isAllowedExtension, isCachableError, isHostnamePubliclyAccessible} from "./network";
 
 const HTTP_TIMEOUT = Number(process.env.HTTP_TIMEOUT) || 10000;
 
@@ -45,13 +45,13 @@ async function isBlocked(urlToFetch) {
 	const url = URL.parse(urlToFetch);
 	const blockedError = defaultOutput(urlToFetch);
 
-	if (isBlockedExtension(urlToFetch)) {
+	if (!isAllowedExtension(urlToFetch)) {
 		// Return standard format for misbehaving clients
 		blockedError.err = 'This resource is blocked from fetching opengraph data';
 		return blockedError;
 	}
 
-	const isPublicResource = await isPubliclyAccessible(url);
+	const isPublicResource = await isHostnamePubliclyAccessible(url.hostname);
 	if (!isPublicResource) {
 		// Return standard format for internal requests clients
 		blockedError.err = 'This resource is not publicly accessible';
