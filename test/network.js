@@ -36,7 +36,6 @@ describe('Network blocks', () => {
 		const createType = async (type, expected) => {
 			const name2 = `should ${!expected ? 'dis' : ''}allow an ${type ? type : 'root document'}`;
 			const url = `http://example.com/download${type ? '.' : ''}${type}`;
-			console.log(url);
 			create(name2, url, expected);
 		};
 		createType('PDF', false);

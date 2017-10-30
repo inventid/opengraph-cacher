@@ -18,6 +18,7 @@ function response(statusCode, response) {
 		response
 	}
 }
+
 async function fetchFromRemote(urlToFetch) {
 	const options = {
 		url : encodeURI(urlToFetch),
