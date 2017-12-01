@@ -1,7 +1,6 @@
 import ogs from 'open-graph-scraper';
 import express from 'express';
 import URL from 'url';
-import promisify from 'es6-promisify';
 import {get, remove, save} from "./cache";
 import defaultOutput from './defaultOutput';
 import postProcess from './mapper';
@@ -25,7 +24,7 @@ async function fetchFromRemote(urlToFetch) {
 		timeout : HTTP_TIMEOUT
 	};
 	try {
-		const ogData = await promisify(ogs)(options);
+		const ogData = await ogs(options);
 		if (ogData && ogData.success) {
 			const resultData = postProcess(urlToFetch, ogData.data);
 			return response(200, resultData);
