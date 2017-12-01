@@ -1,6 +1,7 @@
 [![inventid logo](https://cdn.inventid.nl/assets/logo-horizontally-ba8ae38ab1f53863fa4e99b977eaa1c7.png)](http://opensource.inventid.nl)
 
 [![Maintainability](https://api.codeclimate.com/v1/badges/2a3154e29a838ece025b/maintainability)](https://codeclimate.com/github/inventid/opengraph-cacher/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/2a3154e29a838ece025b/test_coverage)](https://codeclimate.com/github/inventid/opengraph-cacher/test_coverage)
 [![Dependency Status](https://gemnasium.com/badges/github.com/inventid/opengraph-cacher.svg)](https://gemnasium.com/github.com/inventid/opengraph-cacher)
 
 # Opengraph Cacher
