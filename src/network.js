@@ -6,9 +6,9 @@ import log, {WARN} from "./log";
 const CACHABLE_NETWORK_ERRORS = [
 	'HPE_INVALID_CONSTANT' // May trigger if eg chipsoft Sharepoint send a content-length of 0 but secretly appends data
 ];
-const NETWORK_ERRORS = [].concat(CACHABLE_NETWORK_ERRORS);
+const NETWORK_ERRORS = [...CACHABLE_NETWORK_ERRORS];
 const CACHABLE_PAGE_ERRORS = ['Page Not Found'];
-const CACHABLE_ERRORS = CACHABLE_NETWORK_ERRORS.concat(CACHABLE_PAGE_ERRORS);
+const CACHABLE_ERRORS = [...CACHABLE_NETWORK_ERRORS, ...CACHABLE_PAGE_ERRORS];
 const BLOCKED_EXTENSIONS = ['pdf', 'gif', 'jpg', 'jpeg', 'png', 'svg', 'mp4'];
 
 async function isHostnamePubliclyAccessible(hostname) {
