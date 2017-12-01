@@ -12,6 +12,8 @@ const config = process.env.ES_URL ? {
 
 if (config) {
 	log(INFO, `Connected to Elasticsearch ${config.version} on ${config.url} using index '${config.index}' with type '${config.type}'. Using a cache of ${config.duration} days.`);
+} else {
+	log(INFO, `No Elasticsearch cache configured`);
 }
 
 const es = config ? new ElasticSearch.Client({
