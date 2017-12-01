@@ -1,8 +1,11 @@
-const camoUrl = require('camo-url')({
+import defaultOutput from './defaultOutput';
+
+const config = {
 	host : process.env.CAMO_HOST,
 	key : process.env.CAMO_KEY
-});
-const defaultOutput = require('./defaultOutput');
+};
+
+const camoUrl = require('camo-url')(config);
 
 function stringToUnderscore(input) {
 	return input.replace(/([A-Z])/g, function ($1) {
@@ -12,24 +15,24 @@ function stringToUnderscore(input) {
 
 function resolveRelative(path, base) {
 	// Somebody forgot to properly set a protocol on an otherwise absolute url
-	if (path.indexOf("www.") === 0) {
+	if (path.startsWith("www.")) {
 		return 'http://' + path;
 	}
 
 	// Absolute URL
-	if (path.match(/^[a-z]*:\/\//)) {
+	else if (path.match(/^[a-z]*:\/\//)) {
 		return path;
 	}
 	// Protocol relative URL
-	if (path.indexOf("//") === 0) {
+	else if (path.startsWith("//")) {
 		return base.replace(/\/\/.*/, path)
 	}
 	// Upper directory
-	if (path.indexOf("../") === 0) {
+	else if (path.startsWith("../")) {
 		return resolveRelative(path.slice(3), base.replace(/\/[^\/]*$/, ''));
 	}
 	// Relative to the root
-	if (path.indexOf('/') === 0) {
+	else if (path.startsWith('/')) {
 		if (!base.endsWith('/')) {
 			base += '/';
 		}
@@ -40,19 +43,23 @@ function resolveRelative(path, base) {
 	return base.replace(/\/[^\/]*$/, "") + '/' + path.replace(/^\.\//, '');
 }
 
+function mapKey(originalKey) {
+	if (originalKey.startsWith('og')) {
+		return stringToUnderscore(originalKey.substring(2)).substring(1);
+	}
+	else if (originalKey.startsWith('twitter')) {
+		return stringToUnderscore(originalKey);
+	}
+}
+
 // result will be mutated
 function mapKeys(data, originalKey, result) {
-	if (data[originalKey] === null || typeof data[originalKey] === 'undefined') {
+	if (data[originalKey] === null) {
 		return;
 	}
 
-	let key;
-	if (originalKey.startsWith('og')) {
-		key = stringToUnderscore(originalKey.substring(2)).substring(1);
-	}
-	else if (originalKey.startsWith('twitter')) {
-		key = stringToUnderscore(originalKey);
-	} else {
+	const key = mapKey(originalKey);
+	if (!key) {
 		return;
 	}
 
@@ -63,37 +70,37 @@ function mapKeys(data, originalKey, result) {
 	}
 }
 
-module.exports = function postProcess(url, data) {
+export default function postProcess(url, data) {
 	const result = defaultOutput(url);
 	const canonicalUrl = data.ogUrl || url;
 
 	// Format images for their special cases
-	['ogImage', 'twitterImage'].forEach(function (key) {
+	['ogImage', 'twitterImage'].forEach(key => {
 		if (data[key]) {
 			if (!data[key].url) {
 				delete data[key];
 			} else if (data[key].url) {
 				let imageUrl = resolveRelative(data[key].url, canonicalUrl);
-				if (process.env.CAMO_KEY && process.env.CAMO_HOST) {
+				if (config.host && config.key) {
 					imageUrl = camoUrl(imageUrl);
 				}
-				const image = Object.assign({}, {value : imageUrl});
-				Object.keys(data[key]).filter(function (e) {
-					return e !== 'url';
-				}).forEach(function (innerKey) {
-					image[innerKey] = [{value : data[key][innerKey]}];
-				});
+
+				const image = {value : imageUrl};
+				Object.keys(data[key])
+					.filter(e => e !== 'url')
+					.forEach(function (innerKey) {
+						image[innerKey] = [{value : data[key][innerKey]}]
+					});
 				data[key] = image;
 			}
 		}
 	});
 
 	// Now map this to useful structures
-	Object.keys(data).forEach(function(originalKey) { mapKeys(data, originalKey, result); });
+	Object.keys(data).forEach(originalKey => mapKeys(data, originalKey, result));
 
 	if (!result.data.url) {
 		result.data.url = [{value : url}];
 	}
-
 	return result;
-};
+}
