@@ -1,4 +1,4 @@
-FROM node:8.5
+FROM node:8.9
 MAINTAINER Rogier Slag
 
 EXPOSE 7070
@@ -10,11 +10,11 @@ RUN npm install -g pm2
 
 RUN mkdir /service
 ADD .babelrc /service/
-ADD package-lock.json /service/
+ADD yarn.lock /service/
 ADD package.json /service/
-RUN cd /service && npm install
+RUN cd /service && yarn install --pure-lockfile
 ADD src /service/src/
-RUN cd /service && npm run dist
+RUN cd /service && yarn dist
 
 USER luser
 WORKDIR /service/dist
