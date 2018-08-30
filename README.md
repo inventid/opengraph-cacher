@@ -90,7 +90,7 @@ Additionally it caches the results for a configurable time in an Elasticsearch i
 The service will automatically create an index the first time save is performed.
 There are no special mappings required for the service.
 
-# Camo images
+## Camo images
 
 In order to ensure clients can requests clients from http over https the [camo](https://github.com/atmos/camo) service can be used. If the environment variables `CAMO_HOST` and `CAMO_KEY` are set, images are automatically rewritten to use the defined camo instance.
 
@@ -112,5 +112,25 @@ docker run \
     inventid/opengraph-cacher
 ```
 
+Example without elasticsearch:
+
+    docker run -p 7070:7070 inventid/opengraph-cacher
+
 The `CACHE_IN_DAYS` variable can be omitted (which will fallback to 28 days).
 
+## API
+
+The service has three simple endpoints:
+
+### GET /opengraph?url=your-escaped-url
+
+Example: [http://localhost:7070/opengraph/?url=http%3A%2F%2Finventid.nl]()
+ventid.nl).
+
+### DELETE /opengraph?url=your-escaped-url
+
+Delete it from the cache, if you have a cache enabled.
+
+### GET /_health
+
+To see if the container is online
