@@ -1,4 +1,4 @@
-FROM node:8.9
+FROM node:8.11
 MAINTAINER Rogier Slag
 
 EXPOSE 7070
@@ -6,7 +6,7 @@ EXPOSE 7070
 RUN groupadd -r luser && useradd -r -g luser luser
 RUN mkdir -p /home/luser/.pm2/
 RUN chown -R luser.luser /home/luser
-RUN npm install -g pm2
+RUN yarn global add pm2
 
 RUN mkdir /service
 ADD .babelrc /service/
@@ -18,5 +18,5 @@ RUN cd /service && yarn dist
 
 USER luser
 WORKDIR /service/dist
-CMD ["/usr/local/bin/pm2", "start", "index.js",  "--no-daemon", "--instances=max"]
+CMD ["/usr/local/bin/pm2-docker", "start", "index.js", "--instances=max"]
 
