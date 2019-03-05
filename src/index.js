@@ -21,7 +21,11 @@ function response(statusCode, response) {
 async function fetchFromRemote(urlToFetch) {
 	const options = {
 		url : encodeURI(urlToFetch),
-		timeout : HTTP_TIMEOUT
+		timeout : HTTP_TIMEOUT,
+		headers: {
+			'user-agent': 'opengraph-cacher <https://github.com/inventid/opengraph-cacher>',
+			accept: '*/*'
+		}
 	};
 	try {
 		const ogData = await ogs(options);
@@ -37,6 +41,7 @@ async function fetchFromRemote(urlToFetch) {
 			return response(statusCode, resultData);
 		}
 	} catch (e) {
+		log('ERROR', e);
 		return response(500, defaultOutput(urlToFetch));
 	}
 }
