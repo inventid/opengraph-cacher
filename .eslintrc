@@ -17,7 +17,7 @@ env:
 # http://eslint.org/docs/rules/
 rules:
   # Possible Errors
-  comma-dangle: [2, never]
+  comma-dangle: [0, never]
   no-cond-assign: 2
   no-console: 0
   no-constant-condition: 2

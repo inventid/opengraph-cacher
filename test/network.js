@@ -7,7 +7,7 @@ describe('Network blocks', () => {
 	describe('#isPubliclyAccessible()', async () => {
 		const create = async (name, url, expected) => {
 			it(name, async () => {
-				assert.equal(expected, await isHostnamePubliclyAccessible(URL.parse(url).hostname))
+				assert.strictEqual(expected, await isHostnamePubliclyAccessible(URL.parse(url).hostname))
 			});
 		};
 
@@ -26,7 +26,7 @@ describe('Network blocks', () => {
 
 	describe('#isAllowedExtension()', () => {
 		const create = async (name, url, expected) => {
-			it(name, async () => assert.equal(expected, isAllowedExtension(url)));
+			it(name, async () => assert.strictEqual(expected, isAllowedExtension(url)));
 		};
 
 		create('should allow some file', 'http://example.com/index.html', true);
