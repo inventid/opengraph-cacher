@@ -63,7 +63,7 @@ function mapKeys(data, originalKey, result) {
 		return;
 	}
 
-	if (data[originalKey].value) {
+	if (data[originalKey] && data[originalKey].value) {
 		result.data[key] = [data[originalKey]]
 	} else {
 		result.data[key] = [{value : data[originalKey]}]
