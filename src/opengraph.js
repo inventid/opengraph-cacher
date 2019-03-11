@@ -23,7 +23,8 @@ async function fetchFromRemote(urlToFetch) {
 		timeout : HTTP_TIMEOUT,
 		headers : {
 			'user-agent' : 'opengraph-cacher <https://github.com/inventid/opengraph-cacher>',
-			accept : 'text/html,text/plain;q=0.9,*/*;q=0.8'
+			accept : 'text/html,text/plain;q=0.9,*/*;q=0.8',
+			'accept-encoding': 'identify',
 		}
 	};
 	try {

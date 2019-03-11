@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dist": "yarn bin && babel src --out-dir dist",
-    "test": "ENV=test mocha --require babel-register && yarn lint && yarn dist",
+    "test": "yarn test:local && yarn test:remote",
+    "test:local": "ENV=test mocha --require babel-register test/index.js && yarn lint && yarn dist",
+    "test:remote": "ENV=test mocha --require babel-register --slow=2000 test/knownDomains.js",
     "lint": "eslint src/"
   },
   "author": "",
@@ -25,6 +27,7 @@
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-es2015": "^6.24.1",
     "eslint": "^4.12.1",
-    "mocha": "^4.0.1"
+    "mocha": "^4.0.1",
+    "mocha.parallel": "^0.15.6"
   }
 }
