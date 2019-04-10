@@ -94,4 +94,5 @@ export default [
 	"instagram.com",
 	"pagerduty.com",
 	"slack.com",
+	"yacht.nl",
 ];
