@@ -40,7 +40,6 @@ export default [
 	"msn.com",
 	"google.de",
 	"office.com",
-	"whatsapp.com",
 	"apple.com",
 	"google.fr",
 	"tumblr.com",
