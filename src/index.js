@@ -1,8 +1,17 @@
 import express from 'express';
-import log, {INFO} from "./log";
+import log, {INFO, ERR} from "./log";
 import {getOpengraphData, removeOpengraphData} from "./opengraph";
 
 const HTTP_TIMEOUT = Number(process.env.HTTP_TIMEOUT) || 10000;
+
+process.on('uncaughtException', function (err) {
+	log(ERR, `uncaughtException: ${err}`);
+	process.exit(1);
+});
+process.on('unhandledRejection', function (err) {
+	log(ERR, `unhandledRejection: ${err}`);
+	process.exit(1);
+});
 
 log(INFO, "Using a HTTP timeout of " + HTTP_TIMEOUT + " milliseconds");
 
