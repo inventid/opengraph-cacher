@@ -6,10 +6,12 @@ const HTTP_TIMEOUT = Number(process.env.HTTP_TIMEOUT) || 10000;
 
 process.on('uncaughtException', function (err) {
 	log(ERR, `uncaughtException: ${err}`);
+	// eslint-disable-next-line no-process-exit
 	process.exit(1);
 });
 process.on('unhandledRejection', function (err) {
 	log(ERR, `unhandledRejection: ${err}`);
+	// eslint-disable-next-line no-process-exit
 	process.exit(1);
 });
 
