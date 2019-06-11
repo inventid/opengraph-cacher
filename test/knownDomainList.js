@@ -83,7 +83,7 @@ export default [
 	"moz.com",
 	"chase.com",
 	"zhanqi.tv",
-	"quizlet.com",
+	"studeersnel.nl",
 	"abs-cbn.com",
 	"globo.com",
 	"yts.am",
