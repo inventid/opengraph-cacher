@@ -1,4 +1,4 @@
-import promisify from 'es6-promisify';
+import {promisify} from 'es6-promisify';
 import dns from 'dns';
 import ip from 'ip';
 import log, {WARN} from "./log";

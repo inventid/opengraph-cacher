@@ -14,9 +14,9 @@ ADD yarn.lock /service/
 ADD package.json /service/
 RUN cd /service && yarn install --pure-lockfile
 ADD src /service/src/
-RUN cd /service && yarn dist
+RUN cd /service && yarn build:prod
 
 USER luser
-WORKDIR /service/dist
+WORKDIR /service/build/src
 CMD ["/usr/local/bin/pm2-docker", "start", "index.js", "--instances=max"]
 
