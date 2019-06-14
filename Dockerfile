@@ -14,7 +14,7 @@ ADD yarn.lock /service/
 ADD package.json /service/
 RUN cd /service && yarn install --pure-lockfile
 ADD src /service/src/
-RUN cd /service && yarn build:prod
+RUN cd /service && yarn build
 
 USER luser
 WORKDIR /service/build/src
