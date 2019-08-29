@@ -5,7 +5,6 @@ export default [
 	"google.com",
 	"youtube.com",
 	"facebook.com",
-	"baidu.com",
 	"wikipedia.org",
 	"qq.com",
 	"yahoo.com",
